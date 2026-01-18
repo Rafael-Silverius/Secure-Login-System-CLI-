@@ -1,6 +1,7 @@
 import sqlite3
 from utils import hash_password
 from database import DB_FILE
+from datetime import datetime
 
 #------------- Create Admin -------------
 def create_admin():
@@ -15,7 +16,7 @@ def create_admin():
 
     try:
         cursor.execute(
-            'INSERT INTO users (username,password,role) VALUES (?, ?, ?)',(username,hashed,role)
+            'INSERT INTO users (username,password,role,created_at) VALUES (?, ?, ?, ?)',(username,hashed,role,datetime.utcnow().isoformat())
         )
         conn.commit()
         print("Admin account created.")
@@ -23,21 +24,25 @@ def create_admin():
         print("Admin already exists")
     finally:
         conn.close()
+
 #---------- Admin menu --------
 def admin_menu():
     while True:
         print("\n--- ADMIN PANEL ---")
         print("1. View all users")
-        print("2. Delete user")
-        print("3. Logout")
+        print("2. View Login Attempts")
+        print("3. Delete user")
+        print("4. Logout")
 
         choice = input("Choose an option: ").strip()
 
         if choice == "1":
             view_all_users()
-        elif choice == "2":
-            delete_user()
+        elif choice=="2":
+            view_login_attempts()
         elif choice == "3":
+            delete_user()
+        elif choice == "4":
             break
         else:
             print("Invalid choice.")
@@ -98,3 +103,27 @@ def delete_user():
     conn.close()
     
     print(f"User '{username}' has been deleted successfully.")
+
+def view_login_attempts():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    # Join users table to show username
+    cursor.execute("""
+        SELECT lh.id, u.username, lh.login_time, lh.success
+        FROM login_history lh
+        JOIN users u ON lh.user_id = u.id
+        ORDER BY lh.login_time DESC
+    """)
+    attempts = cursor.fetchall()
+    conn.close()
+
+    if not attempts:
+        print("\nNo login attempts recorded yet.")
+        return
+
+    print("\n--- Login Attempts ---")
+    for attempt in attempts:
+        attempt_id, username, login_date, success = attempt
+        status = "SUCCESS" if success == 1 else "FAILED"
+        print(f"ID: {attempt_id} | User: {username} | Date: {login_date} | Status: {status}")

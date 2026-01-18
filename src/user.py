@@ -6,21 +6,36 @@ from database import DB_FILE
 def user_menu(username):
     while True:
         print(f"\n--- Welcome {username} ---")
-        print("1. Change Password")
-        print("2. Delete Account")
-        print("3. Logout")
+        print ("1. View Profile")
+        print("2. Change Password")
+        print("3. Delete Account")
+        print("4. Logout")
 
         choice = input("Choose an option: ").strip()
-
-        if choice == "1":
+        if choice =="1":
+            view_profile(username)
+        elif choice == "2":
             update_password(username)
-        elif choice == '2':
+        elif choice == '3':
             delete_account(username)
             break
-        elif choice == "3":
+        elif choice == "4":
             break
         else:
             print("Invalid choice.")
+def view_profile(username):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT username, role, created_at, last_login FROM users WHERE username = ?",
+        (username,)
+    )
+    result=cursor.fetchone()
+    username, role,created_at,last_login = result
+    print(f"Username: {username}")
+    print(f'Role: {role}')
+    print(f"Account created: {created_at} ")
+    print(f"Last Login: {last_login}")
 
 def update_password(username):
     conn = sqlite3.connect(DB_FILE)
